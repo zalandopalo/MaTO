@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 
 def duplicator(fx: str, vary: list = None, substitute: list = None) -> [str, str]:
     """
-    Input Function u want to duplicate. Get 2 for sail.
+    Input Function u want to duplicate. Get 2 for sale.
     By default, returns duplicate with "variable_name1"
     Subsequence in vary and substitute must be same.
     :param fx: Function for duplicating
@@ -53,6 +53,7 @@ def duplicator(fx: str, vary: list = None, substitute: list = None) -> [str, str
 
 def preparator(fx: str) -> str:
     """
+    All inputting functions needs to be prepared for use
     :param fx:  Function
     :return: prepared function for eval()
     """
