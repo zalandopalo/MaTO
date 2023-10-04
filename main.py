@@ -5,6 +5,118 @@ from sympy import *
 from sympy.plotting import plot
 import numpy as np
 from matplotlib import pyplot as plt
+import re
+
+
+def dichotomia(fx: str, interval: [], accuracy: float):
+    interval = sorted(interval)
+    a, b = float(interval[0]), float(interval[1])
+    delta = (abs(a) + abs(b)) / 4
+    k = 0
+    x_mid = (a + b) / 2
+
+    return None, None
+
+
+def uni_search(fx: str, interval: [], n: int):
+    interval = sorted(interval)
+    function, xi, a0, b0, = fx, [], int(interval[0]), int(interval[1])
+    fxi = []
+    function = compile(function, "<string>", "eval")
+    for i in range(n):
+        xi.append(a0 + (i + 1) * ((b0 - a0) / (n + 1)))
+        x = xi[i]
+        fxi.append(eval(function))
+    min_point = round(xi[fxi.index(min(fxi))], 3)
+    try:
+        try:
+            mit = [round(xi[fxi.index(min(fxi)) - 1], 3), round(xi[fxi.index(min(fxi)) + 1], 3)]
+        except:
+            mit = [round(xi[fxi.index(min(fxi)) - 1], 3), b0]
+    except:
+        mit = [a0, round(xi[fxi.index(min(fxi)) + 1], 3)]
+    return min_point, mit
+
+
+def alg_Swann(start_location, step, fx):
+    """
+    Svenn's Algorithm
+    :param start_location: Start point
+    :param step: Step
+    :param fx: Function sympy
+    :return: Minimum localization interval
+    """
+    x0 = start_location
+    h = step
+    function = fx
+    # вычислить функцию по значению х
+    function = preparator(function)
+    function, function1 = duplicator(function)
+
+    function = compile(function, "<string>", "eval")
+    function1 = compile(function1, "<string>", "eval")
+    # проверка на направление функции
+    x, x1 = x0, x0 + h
+    fx1 = round(float(eval(function)), 3)
+    fx2 = round(float(eval(function1)), 3)
+    flag = (fx1 < fx2)
+    if flag == True:
+        h = 0 - h
+        x1 = x0 + h
+        fx2 = round(float(eval(function1)), 3)
+    else:
+        x1 = x + (2 * h)
+        fx2 = round(float(eval(function1)), 3)
+    f = x
+    flag1 = (fx1 < fx2)
+    while flag1 == False:
+        f = x
+        x = x1
+        h = round(h + h, 3)
+        x1 = round(x1 + h, 3)
+        fx1 = round(float(eval(function)), 3)
+        fx2 = round(float(eval(function1)), 3)
+        flag1 = (fx1 < fx2)
+    interval_min = f
+    interval_max = x1
+    return [interval_min, interval_max]
+
+
+def graphic_pls(fx: str, name: str, interval: [] = None, point: float = None) -> None:
+    if interval is None:
+        interval = [-1, 1]
+    plt.title(f"Method: {name}\n Function: {fx}")
+    plt.xlabel("X")
+    plt.ylabel("Y")
+    plt.grid()
+    plot_x = np.arange(min(interval) - 2, max(interval) + 2, 0.001)
+    plot_y = preparator(fx)
+    plt_y = [eval(plot_y) for x in plot_x]
+    plt.ylim(min(plt_y) - 1, min(plt_y) + 4)
+    plt.plot(plot_x, plt_y, "g-", label='Function')
+    plot_x1 = np.arange(min(interval), max(interval), 0.001)
+    plot_y1 = [eval(plot_y) for x in plot_x1]
+    plt.plot(plot_x1, plot_y1, "r-", label='MLI')
+
+    if point is not None:
+        plt.scatter(point, eval(plot_y, {"x": point}))
+    plt.legend()
+    plt.show()
+
+
+def preparator(fx: str) -> str:
+    """
+    All inputting functions needs to be prepared for use
+    :param fx:  Function
+    :return: prepared function for eval()
+    """
+    opers = ["sqrt(", "exp", "pi", "e(", "cos(", "sin(", "asin(", "acos(", "tan(", "atan("]
+    for elem in fx.split(" "):
+        if elem in opers:
+            fx = fx.replace(f'{elem}', f'math.{elem}')
+        else:
+            continue
+    return fx
 
 
 def duplicator(fx: str, vary: list = None, substitute: list = None) -> [str, str]:
@@ -51,21 +163,6 @@ def duplicator(fx: str, vary: list = None, substitute: list = None) -> [str, str
         return fx, fx1
 
 
-def preparator(fx: str) -> str:
-    """
-    All inputting functions needs to be prepared for use
-    :param fx:  Function
-    :return: prepared function for eval()
-    """
-    opers = ["sqrt(", "exp", "pi", "e(", "cos(", "sin(", "asin(", "acos(", "tan(", "atan("]
-    for elem in fx.split(" "):
-        if elem in opers:
-            fx = fx.replace(f'{elem}', f'math.{elem}')
-        else:
-            continue
-    return fx
-
-
 def symbol_search(string: str) -> str:
     """
     :param string:  separated with spaces function
@@ -85,50 +182,6 @@ def symbol_search(string: str) -> str:
     return ", ".join(sorted(values))
 
 
-def alg_svenn(start_location, step, fx):
-    """
-    Svenn's Algorithm
-    :param start_location: Start point
-    :param step: Step
-    :param fx: Function sympy
-    :return: Minimum localization interval
-    """
-    x0 = start_location
-    h = step
-    function = fx
-    # вычислить функцию по значению х
-    function = preparator(function)
-    function, function1 = duplicator(function)
-
-    function = compile(function, "<string>", "eval")
-    function1 = compile(function1, "<string>", "eval")
-    # проверка на направление функции
-    x, x1 = x0, x0 + h
-    fx1 = round(float(eval(function)), 3)
-    fx2 = round(float(eval(function1)), 3)
-    flag = (fx1 < fx2)
-    if flag == True:
-        h = 0 - h
-        x1 = x0 + h
-        fx2 = round(float(eval(function1)), 3)
-    else:
-        x1 = x + (2 * h)
-        fx2 = round(float(eval(function1)), 3)
-    f = x
-    flag1 = (fx1 < fx2)
-    while flag1 == False:
-        f = x
-        x = x1
-        h = round(h + h, 3)
-        x1 = round(x1 + h, 3)
-        fx1 = round(float(eval(function)), 3)
-        fx2 = round(float(eval(function1)), 3)
-        flag1 = (fx1 < fx2)
-    interval_min = f
-    interval_max = x1
-    return [interval_min, interval_max]
-
-
 def build_function(function: str) -> [float, float]:
     """
     main program thread
@@ -137,7 +190,7 @@ def build_function(function: str) -> [float, float]:
         func = function
         # ввод операции
 
-        oper_type = input("Input operation option\n(diff, local_ext): ")
+        oper_type = "local_min"  # input("Input operation option\n(diff, local_min): ")
         match oper_type.lower():
             #  для расширения функционала
             case "diff":
@@ -146,32 +199,41 @@ def build_function(function: str) -> [float, float]:
                 globals()[syms] = symbols(syms)
                 dfunc = diff(func, dif_var)
                 return dfunc
-            case "local_ext":
-                alg = input("Select algorithm\n(Svens):")
+            case "local_min":
+                alg = "dichotomia"  # input("Select algorithm\n(Swann, uni_srch):")
                 match alg.lower():
                     # Алгоритм Свенна
-                    case "svens":  # 0.75 * ( x ** 4 ) - 2 * ( x ** 3) + 2
+                    case "swann":  # 0.75 * ( x ** 4 ) - 2 * ( x ** 3) + 2
                         # Minimum localization interval
-
-                        localiz = alg_svenn(0, 0.1, func)
-                        plt.title(f"Method: {alg.upper()}\n Function: {func}")
-                        plt.xlabel("X")
-                        plt.ylabel("Y")
-                        plt.grid()
-                        plot_x = np.arange(min(localiz) - 5, max(localiz) + 5, 0.001)
-                        plot_y = preparator(func)
-                        _, plot_y = duplicator(plot_y, None, ["plot_x"])
-                        plt_y = [eval(plot_y) for plot_x in plot_x]
-                        plt.ylim(min(plt_y) - 1, 7)
-                        plt.plot(plot_x, plt_y, "g-", label='Function')
-                        plot_x1 = np.arange(min(localiz), max(localiz), 0.001)
-                        plot_y1 = [0 for i in range(np.size(plot_x1))]
-
-                        plt.plot(plot_x1, plot_y1, "r-", label='MLI')
-                        plt.legend()
-                        plt.show()
-
+                        localiz = alg_Swann(1, 0.01, func)
+                        graphic_pls(func, "Swann", localiz)
                         return localiz
+                    case "uni_srch":
+                        # uniform search
+                        variant = input('input interval manually or use Swann method? (Manual/Swann:):')
+                        match variant.lower():
+                            case "manual":
+                                interval = input("Input interval: 'from : to' :")
+                                interval = re.split(" : | | :|: |:", interval)
+
+                                point_min, localiz = uni_search(func, interval,
+                                                                int(round(((abs(int(interval[0])) + abs(
+                                                                    int(interval[1]))) * 10), 0)))
+                                graphic_pls(func, "uniform search", localiz, point_min)
+                                return localiz, point_min
+                            case "swann":
+                                localiz = alg_Swann(0, 0.01, func)
+                                point_min, localiz = uni_search(func, localiz,
+                                                                int(round((localiz[0]) + abs(localiz[1]) * 10, 0)))
+                                graphic_pls(func, "Uniform search", localiz, point_min)
+                                return localiz, point_min
+
+                    case "dichotomia":
+                        localiz = alg_Swann(0, 0.01, func)
+                        localiz, point_min = dichotomia(func, localiz, 0.01)
+                        graphic_pls(func, "Dichotomia", localiz, point_min)
+                        return localiz, point_min
+
                     case _:
                         print("No such method")
                         return None
@@ -180,13 +242,14 @@ def build_function(function: str) -> [float, float]:
                 return None
 
     except:
-        return eval(function)
+        return print("something gone wrong")
 
 
 while True:
-    strings = input("Split values with ' ': ")
+    strings = "0.75 * ( x ** 4 ) - 2 * ( x ** 3) + 2"  # input("Split values with ' ': ")
     match strings:
         case "exit":
             sys.exit(0)
         case _:
             print(build_function(strings))
+            sys.exit(0)
