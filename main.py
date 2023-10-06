@@ -8,19 +8,64 @@ from matplotlib import pyplot as plt
 import re
 
 
+def golden_ratio(fx: str, interval: [], accuracy: float):
+    interval = sorted(interval)
+    a, b = float(interval[0]), float(interval[1])
+    function = compile(preparator(fx), "<string>", "eval")
+    loca = (b - a)
+    mid_point = ((a + b) / 2)
+    y = a + 0.38196 * (b - a)
+    z = a + b - y
+    while loca > accuracy:
+        fyk = round(eval(function, {"x": y}), 4)
+        fzk = round(eval(function, {"x": z}), 4)
+
+        if fyk < fzk or math.isclose(fyk, fzk, abs_tol=0.4):
+            b = z
+            z = y
+            y = a + b - y
+
+        else:
+            a = y
+            y = z
+            z = a + b - z
+        loca = (b - a)
+    mid_point = ((a + b) / 2)
+    return [round(a, 4), round(b, 4)], round(mid_point, 4)
+
+
 def dichotomia(fx: str, interval: [], accuracy: float):
     interval = sorted(interval)
     a, b = float(interval[0]), float(interval[1])
-    delta = (abs(a) + abs(b)) / 4
-    k = 0
-    x_mid = (a + b) / 2
+    function = compile(preparator(fx), "<string>", "eval")
+    # step 3
+    mid_point = (b + a) / 2
+    fmid = eval(function, {"x": mid_point})
+    # step 4
+    while (b - a) > accuracy:
+        delta = (abs(b - a)) / 4
+        yk, zk = a + delta, b - delta
+        fyk, fzk = eval(function, {"x": yk}), eval(function, {"x": zk})
+        if round(fyk, 4) < round(fmid, 4):
+            b = mid_point
+            mid_point = (b + a) / 2
+            fmid = eval(function, {"x": mid_point})
+        else:
+            if round(fzk, 4) < round(fmid, 4):
+                a = mid_point
+                mid_point = (b + a) / 2
+                fmid = eval(function, {"x": mid_point})
+            else:
+                a, b = yk, zk
+                mid_point = (b + a) / 2
+                fmid = eval(function, {"x": mid_point})
 
-    return None, None
+    return [round(a, 4), round(b, 4)], round(mid_point, 4)
 
 
 def uni_search(fx: str, interval: [], n: int):
     interval = sorted(interval)
-    function, xi, a0, b0, = fx, [], int(interval[0]), int(interval[1])
+    function, xi, a0, b0, = preparator(fx), [], int(interval[0]), int(interval[1])
     fxi = []
     function = compile(function, "<string>", "eval")
     for i in range(n):
@@ -96,7 +141,7 @@ def graphic_pls(fx: str, name: str, interval: [] = None, point: float = None) ->
     plt.plot(plot_x, plt_y, "g-", label='Function')
     plot_x1 = np.arange(min(interval), max(interval), 0.001)
     plot_y1 = [eval(plot_y) for x in plot_x1]
-    plt.plot(plot_x1, plot_y1, "r-", label='MLI')
+    plt.plot(plot_x1, plot_y1, "r-", label=f'MLI: {interval}\nMIP: {point}')
 
     if point is not None:
         plt.scatter(point, eval(plot_y, {"x": point}))
@@ -200,7 +245,7 @@ def build_function(function: str) -> [float, float]:
                 dfunc = diff(func, dif_var)
                 return dfunc
             case "local_min":
-                alg = "dichotomia"  # input("Select algorithm\n(Swann, uni_srch):")
+                alg = "golden_rat"  # input("Select algorithm\n(Swann, uni_srch, golden_rat):")
                 match alg.lower():
                     # Алгоритм Свенна
                     case "swann":  # 0.75 * ( x ** 4 ) - 2 * ( x ** 3) + 2
@@ -215,7 +260,6 @@ def build_function(function: str) -> [float, float]:
                             case "manual":
                                 interval = input("Input interval: 'from : to' :")
                                 interval = re.split(" : | | :|: |:", interval)
-
                                 point_min, localiz = uni_search(func, interval,
                                                                 int(round(((abs(int(interval[0])) + abs(
                                                                     int(interval[1]))) * 10), 0)))
@@ -234,15 +278,21 @@ def build_function(function: str) -> [float, float]:
                         graphic_pls(func, "Dichotomia", localiz, point_min)
                         return localiz, point_min
 
+                    case "golden_rat":
+                        localiz = alg_Swann(0, 0.01, func)
+                        localiz, point_min = golden_ratio(func, localiz, 0.01)
+                        graphic_pls(func, "Golden ratio", localiz, point_min)
+                        return localiz, point_min
+
                     case _:
                         print("No such method")
                         return None
             case _:
                 print("No such operation")
-                return None
+
 
     except:
-        return print("something gone wrong")
+        return print("Something gone wrong")
 
 
 while True:
