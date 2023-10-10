@@ -8,33 +8,100 @@ from matplotlib import pyplot as plt
 import re
 
 
+def fibonacci(fx: str, interval: [], accuracy: float):
+    """
+    Fibonacci's method. length of end interval is 1. => l = 1
+    e = accuracy.
+    :param  fx: string.
+    :param interval: list [min, max].
+    :param accuracy: calculation accuracy .
+    :return: Interval, middle point of interval.
+    """
+    func = compile(preparator(fx), "<string>", "eval")
+    interval = sorted(interval)
+    a, b = float(interval[0]), float(interval[1])
+    mid_point = (a + b) / 2
+    k = 0
+    yk = []
+    zk = []
+
+    # gen fibonacci number (not optimized)
+    def f(i):
+        fib = [0, 1]
+        for i in range(n - len(fib)):
+            fib.append(fib[-1] + fib[-2])
+        return fib[n - 1]
+
+
+    n = 0
+    while f(n) < abs(b - a):
+        n = n + 1
+    while k != n - 3:
+
+        yk.append((a + ((f((n - 2))) / (f(n))) * (b - a)))
+        zk.append((a + ((f((n - 1))) / (f(n))) * (b - a)))
+
+        fyk = eval(func, {"x": yk[k]})
+        fzk = eval(func, {"x": zk[k]})
+
+        if fyk <= fzk:
+            b = zk[k]
+            zk.append(yk[k])
+            yk.append(a + ((f(n - k - 3)) / (f(n - k - 1))) * (b - a))
+            if k != n - 3:
+                k = k + 1
+            else:
+                break
+        else:
+            a = yk[k]
+            yk.append(zk[k])
+            zk.append(a + ((f(n - k - 3)) / (f(n - k - 1))) * (b - a))
+
+    return [round(a, 4), round(b, 4)], round(mid_point, 4)
+
+
 def golden_ratio(fx: str, interval: [], accuracy: float):
+    """
+    Golden ratio method.
+    :param fx: function string.
+    :param interval: list [min, max].
+    :param accuracy: minimum size of interval.
+    :return: Interval, middle point of interval.
+    """
+
     interval = sorted(interval)
     a, b = float(interval[0]), float(interval[1])
     function = compile(preparator(fx), "<string>", "eval")
-    loca = (b - a)
-    mid_point = ((a + b) / 2)
+
+    loca = abs(a - b)
     y = a + 0.38196 * (b - a)
     z = a + b - y
     while loca > accuracy:
         fyk = round(eval(function, {"x": y}), 4)
         fzk = round(eval(function, {"x": z}), 4)
 
-        if fyk < fzk or math.isclose(fyk, fzk, abs_tol=0.4):
+        if fyk <= fzk:
             b = z
             z = y
-            y = a + b - y
+            y = a + (b - y)
 
         else:
             a = y
             y = z
-            z = a + b - z
-        loca = (b - a)
+            z = a + (b - z)
+        loca = abs(a - b)
     mid_point = ((a + b) / 2)
     return [round(a, 4), round(b, 4)], round(mid_point, 4)
 
 
 def dichotomia(fx: str, interval: [], accuracy: float):
+    """
+    Dichotomia method.
+    :param fx: function string.
+    :param interval: list [min, max].
+    :param accuracy: minimum size of interval.
+    :return: Interval, middle point of interval.
+    """
     interval = sorted(interval)
     a, b = float(interval[0]), float(interval[1])
     function = compile(preparator(fx), "<string>", "eval")
@@ -64,6 +131,13 @@ def dichotomia(fx: str, interval: [], accuracy: float):
 
 
 def uni_search(fx: str, interval: [], n: int):
+    """
+    line search.
+    :param  fx: string.
+    :param interval: list [min, max].
+    :param n: Number of interval splits.
+    :return: Interval, middle point of interval.
+    """
     interval = sorted(interval)
     function, xi, a0, b0, = preparator(fx), [], int(interval[0]), int(interval[1])
     fxi = []
@@ -245,7 +319,7 @@ def build_function(function: str) -> [float, float]:
                 dfunc = diff(func, dif_var)
                 return dfunc
             case "local_min":
-                alg = "golden_rat"  # input("Select algorithm\n(Swann, uni_srch, golden_rat):")
+                alg = "fibonacci"  # input("Select algorithm\n(Swann, uni_srch, golden_rat, fibonacci):")
                 match alg.lower():
                     # Алгоритм Свенна
                     case "swann":  # 0.75 * ( x ** 4 ) - 2 * ( x ** 3) + 2
@@ -271,7 +345,6 @@ def build_function(function: str) -> [float, float]:
                                                                 int(round((localiz[0]) + abs(localiz[1]) * 10, 0)))
                                 graphic_pls(func, "Uniform search", localiz, point_min)
                                 return localiz, point_min
-
                     case "dichotomia":
                         localiz = alg_Swann(0, 0.01, func)
                         localiz, point_min = dichotomia(func, localiz, 0.01)
@@ -282,6 +355,12 @@ def build_function(function: str) -> [float, float]:
                         localiz = alg_Swann(0, 0.01, func)
                         localiz, point_min = golden_ratio(func, localiz, 0.01)
                         graphic_pls(func, "Golden ratio", localiz, point_min)
+                        return localiz, point_min
+
+                    case "fibonacci":
+                        localiz = alg_Swann(0, 0.01, func)
+                        localiz, point_min = fibonacci(func, localiz, 0.01)
+                        graphic_pls(func, "Fibonacci", localiz, point_min)
                         return localiz, point_min
 
                     case _:
