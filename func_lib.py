@@ -91,6 +91,61 @@ class Function:
                 continue
         return ", ".join(sorted(values))
 
+    def fibonacci(self, fx: str = None, interval: [] = None, accuracy: float = 0.01):
+        """
+        Fibonacci's method. May use with custom options.
+        :param fx: your Function.
+        :param interval: Interval of search. Default Swann's interval. May use custom.
+        :param accuracy: Size of Minimum Localization Interval. Default : 0.01
+        :return: plot, MLI, MLP.
+        """
+        if fx is None:
+            fx = self.fx
+        else:
+            fx = self.preparator(fx)
+        if interval is None:
+            interval = self.interval
+        func = compile(fx, "<string>", "eval")
+        interval = sorted(interval)
+        a, b = float(interval[0]), float(interval[1])
+        mid_point = (a + b) / 2
+        k = 0
+        yk = []
+        zk = []
+
+        # gen fibonacci number (not optimized)
+        def f(i):
+            fib = [0, 1]
+            for i in range(n - len(fib)):
+                fib.append(fib[-1] + fib[-2])
+            return fib[n - 1]
+
+        n = 0
+        while f(n) < abs(b - a):
+            n = n + 1
+        while k != n - 3:
+
+            yk.append((a + ((f((n - 2))) / (f(n))) * (b - a)))
+            zk.append((a + ((f((n - 1))) / (f(n))) * (b - a)))
+
+            fyk = eval(func, {"x": yk[k]})
+            fzk = eval(func, {"x": zk[k]})
+
+            if fyk <= fzk:
+                b = zk[k]
+                zk.append(yk[k])
+                yk.append(a + ((f(n - k - 3)) / (f(n - k - 1))) * (b - a))
+                if k != n - 3:
+                    k = k + 1
+                else:
+                    break
+            else:
+                a = yk[k]
+                yk.append(zk[k])
+                zk.append(a + ((f(n - k - 3)) / (f(n - k - 1))) * (b - a))
+
+        return [round(a, 4), round(b, 4)], round(mid_point, 4)
+
     def golden_ratio(self, fx: str = None, interval: [] = None, accuracy: float = 0.01):
         """
         Golden ratio method.
@@ -205,7 +260,7 @@ class Function:
         GraphicPls.graphic(self, name="uni. search", fx=fx, interval=mit, point=min_point)
         return mit, min_point
 
-    def alg_Swann(self, start_location=0, step=0.01, fx: str = None):
+    def alg_Swann(self, start_location=1, step=0.01, fx: str = None):
         """
         Svenn's Algorithm
         :param fx: additional function
@@ -219,57 +274,51 @@ class Function:
         x0 = start_location
         h = step
         # вычислить функцию по значению х
-        function, function1 = self.duplicator(fx=fx)
+        function = fx
         function = compile(function, "<string>", "eval")
-        function1 = compile(function1, "<string>", "eval")
         # проверка на направление функции
         x, x1 = x0, x0 + h
-        fx1 = round(float(eval(function)), 3)
-        fx2 = round(float(eval(function1)), 3)
-        flag = (fx1 < fx2)
-        if flag == True:
+        fx1, fx2 = round(float(eval(function, {"x": x})), 3), round(float(eval(function, {"x": x1})), 3)
+        if fx1 < fx2:
             h = 0 - h
             x1 = x0 + h
-            fx2 = round(float(eval(function1)), 3)
+            fx2 = round(float(eval(function, {"x": x1})), 3)
         else:
             x1 = x + (2 * h)
-            fx2 = round(float(eval(function1)), 3)
+            fx2 = round(float(eval(function, {"x": x1})), 3)
         f = x
-        flag1 = (fx1 < fx2)
-        while flag1 == False:
+        while not fx1 < fx2:
             f = x
             x = x1
-            h = round(h + h, 3)
+            h = round(h * 2, 3)
             x1 = round(x1 + h, 3)
-            fx1 = round(float(eval(function)), 3)
-            fx2 = round(float(eval(function1)), 3)
-            flag1 = (fx1 < fx2)
+            fx1, fx2 = round(float(eval(function, {"x": x})), 3), round(float(eval(function, {"x": x1})), 3)
         interval_min = f
         interval_max = x1
+        GraphicPls.graphic(self, name="Swann", fx=fx, interval=[interval_min, interval_max])
         return sorted([interval_min, interval_max])
 
 
 class GraphicPls(Function):
 
-    def graphic(self, name: str, fx: str = None, interval: [] = None, point: float = None):
+    def graphic(self: Function, name: str, fx: str = None, interval: [] = None, point: float = None):
         plt.title(f"Method: {name}\n Function: {fx}")
         plt.xlabel("X")
         plt.ylabel("Y")
         plt.grid()
-        plot_x = np.arange(min(interval) - 2, max(interval) + 2, 0.001)
+        plot_x = np.arange(min(interval) - 3, max(interval) + 3, 0.001)
         plot_y = self.preparator(fx)
         plt_y = [eval(plot_y) for x in plot_x]
-        plt.ylim(min(plt_y) - 1, min(plt_y) + 4)
+        # plt.ylim(min(plt_y) - 1, min(plt_y) + 4)
         plt.plot(plot_x, plt_y, "g-", label='Function')
         plot_x1 = np.arange(min(interval), max(interval), 0.001)
         plot_y1 = [eval(plot_y) for x in plot_x1]
         plt.plot(plot_x1, plot_y1, "r-", label=f'MLI: {interval}\nMIP: {point}')
-
         if point is not None:
             plt.scatter(point, eval(plot_y, {"x": point}))
         plt.legend()
         plt.show()
 
 
-fx = Function("0.75 * ( x ** 4 ) - 2 * ( x ** 3) + 2")
-print(fx.dichotomia())
+fx = Function("0.5 * ( x ** 3 ) - ( x ** 2 ) - ( 10 * x ) + 4")
+fx.golden_ratio()
